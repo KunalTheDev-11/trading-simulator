@@ -1,1 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRADE//DOJO — Gamified Bar-Replay Simulator</title>
+  <!-- Google Fonts: Bricolage Grotesque & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- TradingView Lightweight Charts CDN -->
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- TOP GAMIFICATION & TELEMETRY BAR -->
+  <header class="top-bar">
+    <div class="brand-box">
+      <span class="logo-badge">DOJO//SIM</span>
+      <div>
+        <h1>TRADE MASTER ENGINE</h1>
+        <p id="rank-title" class="rank-sub">LVL 1 • RETAIL NOVICE</p>
+      </div>
+    </div>
 
+    <div class="rpg-bars">
+      <div class="bar-group">
+        <div class="bar-label"><span>DISCIPLINE HP</span><span id="hp-text">100 / 100</span></div>
+        <div class="progress-track"><div id="hp-fill" class="progress-fill hp-color" style="width: 100%;"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label"><span>MASTERY XP</span><span id="xp-text">0 / 500 XP</span></div>
+        <div class="progress-track"><div id="xp-fill" class="progress-fill xp-color" style="width: 0%;"></div></div>
+      </div>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <span class="kpi-label">EQUITY</span>
+        <span id="equity-val" class="kpi-val">$100,000.00</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">WIN RATE</span>
+        <span id="winrate-val" class="kpi-val">0.0%</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">AVG R-MULTIPLE</span>
+        <span id="rmult-val" class="kpi-val">0.00R</span>
+      </div>
+      <div class="kpi-card streak-card">
+        <span class="kpi-label">RULE STREAK</span>
+        <span id="streak-val" class="kpi-val">🔥 0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="workspace">
+    <!-- LEFT: CHART & REPLAY CONTROLS -->
+    <section class="chart-panel">
+      <div class="chart-toolbar">
+        <div class="toolbar-left">
+          <select id="asset-select" class="neo-select">
+            <option value="SYNTH_TREND">⚡ SIMULATED REGIME (OFFLINE READY)</option>
+          </select>
+          <button id="btn-random-seed" class="neo-btn btn-secondary" title="Jump to random historical date">🎲 BLIND MODE</button>
+        </div>
+
+        <div class="replay-controls">
+          <button id="btn-step" class="neo-btn btn-accent">STEP +1 BAR [SPACE]</button>
+          <button id="btn-play" class="neo-btn btn-secondary">▶ AUTO PLAY [P]</button>
+          <select id="speed-select" class="neo-select">
+            <option value="800">1x Speed</option>
+            <option value="350" selected>2.5x Speed</option>
+            <option value="120">5x Turbo</option>
+          </select>
+        </div>
+
+        <div class="price-readout">
+          <span id="current-date" class="date-tag">YYYY-MM-DD</span>
+          <span id="current-price" class="price-tag">$0.00</span>
+        </div>
+      </div>
+
+      <!-- TRADINGVIEW CHART CONTAINER -->
+      <div id="tv-chart" class="tv-chart-box"></div>
+
+      <!-- MONETIZATION / PRO BANNER SLOT -->
+      <div class="monetization-bar">
+        <span>🏆 <strong>PROALLENGE READY?</strong> Score 50+ Trades with &gt;1.5R Expectancy to unlock Funded Prop-Firm Rebates &amp; AI Coach.</span>
+        <a href="#monetize-modal" id="btn-upgrade" class="promo-link">UNLOCK PRO PACKS →</a>
+      </div>
+    </section>
+
+    <!-- RIGHT: ORDER EXECUTION & RISK DESK -->
+    <aside class="execution-panel">
+      <div class="panel-card">
+        <h2 class="card-title">⚡ ORDER EXECUTION DESK</h2>
+
+        <div class="position-status" id="pos-box">
+          <div class="pos-header">
+            <span id="pos-side" class="badge-flat">FLAT (NO POSITION)</span>
+            <span id="pos-pnl" class="pnl-neutral">$0.00 (0.00R)</span>
+          </div>
+          <div class="pos-details" id="pos-details">
+            Entry: -- | Stop: -- | Target: --
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="input-group">
+            <label>RISK PER TRADE (% OF EQUITY)</label>
+            <input type="number" id="inp-risk-pct" value="1.0" step="0.25" min="0.25" max="10" class="neo-input" />
+          </div>
+          <div class="input-group">
+            <label>STOP-LOSS DISTANCE (%)</label>
+            <input type="number" id="inp-sl-pct" value="2.0" step="0.5" min="0.2" max="20" class="neo-input" />
+          </div>
+          <div class="input-group">
+            <label>TAKE-PROFIT TARGET (R-MULTIPLE)</label>
+            <input type="number" id="inp-tp-r" value="2.5" step="0.5" min="1" max="10" class="neo-input" />
+          </div>
+          <div class="input-group">
+            <label>SETUP TAG (REQUIRED FOR XP)</label>
+            <select id="inp-setup" class="neo-select">
+              <option value="Breakout Pullback">Breakout Pullback</option>
+              <option value="EMA 20 Bounce">EMA 20 Dynamic Bounce</option>
+              <option value="Liquidity Sweep">Liquidity Sweep Reversal</option>
+              <option value="Impulse FOMO">Unplanned / Impulse (XP Penalty)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="order-buttons">
+          <button id="btn-buy" class="neo-btn btn-long">BUY LONG [B]</button>
+          <button id="btn-sell" class="neo-btn btn-short">SELL SHORT [S]</button>
+        </div>
+        <button id="btn-close" class="neo-btn btn-flatten" disabled>FLATTEN / CLOSE POSITION [X]</button>
+      </div>
+
+      <!-- AI FEEDBACK & COMBAT LOG -->
+      <div class="panel-card coach-card">
+        <h2 class="card-title">🤖 DOJO SENSEI FEEDBACK</h2>
+        <div id="sensei-log" class="sensei-box">
+          Press <strong>[SPACE]</strong> to advance candles. Stalk a high-probability setup and size your risk before firing.
+        </div>
+      </div>
+
+      <!-- DATA PERSISTENCE & JOURNAL EXPORT -->
+      <div class="panel-card">
+        <h2 class="card-title">💾 4-YEAR JOURNAL VAULT</h2>
+        <div class="vault-actions">
+          <button id="btn-export" class="neo-btn btn-secondary">⬇ EXPORT JSON</button>
+          <label class="neo-btn btn-secondary file-label">
+            ⬆ IMPORT JSON
+            <input type="file" id="inp-import" accept=".json" hidden />
+          </label>
+          <button id="btn-reset" class="neo-btn btn-danger">RESET</button>
+        </div>
+        <div class="journal-list" id="journal-list"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
